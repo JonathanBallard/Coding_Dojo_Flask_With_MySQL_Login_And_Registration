@@ -22,8 +22,11 @@
 
 
 <body>
-    <h1>Welcome!</h1>
+    <h1>Welcome {{ session['user_id'] }}!</h1>
 
-
+    <form class="form-group" action="/destroy" method="POST">
+        <input type="hidden" name="formType" value="logout">
+        <input type="submit" value="Log Out!">
+    </form>
 </body>
 </html>

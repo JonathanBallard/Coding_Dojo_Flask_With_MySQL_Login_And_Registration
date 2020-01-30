@@ -91,7 +91,10 @@ def register():
     else:
         return redirect('/')
 
-
+@app.route('/destroy', methods=['POST'])
+def destroy():
+    session.clear()
+    return redirect('/')
 
 @app.route('/login', methods=['POST'])
 def login():
@@ -102,19 +105,21 @@ def login():
 
     email = request.form['emailLogin']
     password = str(request.form['passwordLogin'])
-    
-
-    mysql = connectToMySQL("email_registration")
-    query = "SELECT password FROM users WHERE email= %(em)s;"
-    
     data = {
         "em": email
     }
-    
+
     mysql = connectToMySQL("email_registration")
+    query = "SELECT password FROM users WHERE email= %(em)s;"
     login_id = mysql.query_db(query, data)
     
-    print('login_id ***********************************', login_id[0]['password'])
+    
+    # userId
+    mysql = connectToMySQL("email_registration")
+    query = "SELECT first_name FROM users WHERE email = %(em)s;"
+    userId = mysql.query_db(query, data)
+    
+    # print('login_id ***********************************', login_id[0]['password'])
     # if not str(email) in emailDB:
     if not [emailCheck for emailCheck in emailDB if emailCheck['email'] == email]:
         print('EmailCheck ****************************', email)
@@ -128,7 +133,10 @@ def login():
             return redirect('/')
         else:
             flash("Successfully Logged In!")
-            return render_template('/welcome.html')
+            if not 'user_id' in session:
+                session['user_id'] = userId[0]['first_name']
+                print('Session[user_id] *******---------------+***********', session['user_id'])
+            return render_template('/welcome.html', userId = userId)
 
 
 if __name__ == "__main__":
