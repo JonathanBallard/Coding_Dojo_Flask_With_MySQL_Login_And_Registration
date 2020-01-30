@@ -4,7 +4,6 @@ import re
 
 from flask_bcrypt import Bcrypt        
 
-
 app = Flask(__name__)
 app.secret_key = "secretstuff"
 bcrypt = Bcrypt(app)     # we are creating an object called bcrypt, 
@@ -32,7 +31,7 @@ def register():
     conPassword = request.form['passwordConfirm']
     form = request.form['formType']
     isValid = True
-    pwHash = bcrypt.generate_password_hash(password)
+    pwHash = bcrypt.generate_password_hash(password).decode('utf-8')
 
 
     if len(firstName) <= 0:
@@ -98,27 +97,38 @@ def register():
 def login():
     mysql = connectToMySQL("email_registration")
     emailDB = mysql.query_db("SELECT email FROM users;")
+    print(emailDB)
     form = request.form['formType']
 
     email = request.form['emailLogin']
-    password = request.form['passwordLogin']
+    password = str(request.form['passwordLogin'])
     
 
     mysql = connectToMySQL("email_registration")
-    pwDB = mysql.query_db(f"SELECT password FROM users WHERE email={email};")
-
+    query = "SELECT password FROM users WHERE email= %(em)s;"
     
-
-    if not email in emailDB:
-        flash('Invalid Email Address', 'email')
+    data = {
+        "em": email
+    }
+    
+    mysql = connectToMySQL("email_registration")
+    login_id = mysql.query_db(query, data)
+    
+    print('login_id ***********************************', login_id[0]['password'])
+    # if not str(email) in emailDB:
+    if not [emailCheck for emailCheck in emailDB if emailCheck['email'] == email]:
+        print('EmailCheck ****************************', email)
+        flash('Email not in our database', 'email')
         return redirect('/')
     else:
-        if not bcrypt.check_password_hash(pwDB, password):
+        hashCheck = bcrypt.check_password_hash(login_id[0]['password'], password)
+        print('hashCheck ***************************************', hashCheck)
+        if not hashCheck:
             flash('Invalid Password', password)
             return redirect('/')
         else:
             flash("Successfully Logged In!")
-            return redirect('/welcome')
+            return render_template('/welcome.html')
 
 
 if __name__ == "__main__":
